@@ -1,0 +1,508 @@
+{
+    "name": "YT Comment Analysis [Template]",
+    "nodes": [
+        {
+            "parameters": {
+                "content": "## 🛠️YouTube Video Details & Comments Processing Tool",
+                "height": 760,
+                "width": 1870,
+                "color": 7
+            },
+            "id": "481eef9e-2745-4404-b815-9344239714f7",
+            "name": "Sticky Note10",
+            "type": "n8n-nodes-base.stickyNote",
+            "position": [
+                0,
+                0
+            ],
+            "typeVersion": 1
+        },
+        {
+            "parameters": {
+                "jsCode": "\/\/ Define the base URL for the YouTube Data API\nconst BASE_URL = 'https:\/\/www.googleapis.com\/youtube\/v3\/videos';\n\n\/\/ Get the first input item\nconst item = $input.first();\n\n\/\/ Extract the videoId and google_api_key from the input JSON\nconst VIDEO_ID = item.json.VIDEO_ID;\nconst GOOGLE_API_KEY = item.json.GOOGLE_API_KEY; \/\/ Dynamically retrieve API key\n\nif (!VIDEO_ID) {\n  throw new Error('The video ID parameter is empty.');\n}\n\nif (!GOOGLE_API_KEY) {\n  throw new Error('The Google API Key is missing.');\n}\n\n\/\/ Construct the API URL with the video ID and dynamically retrieved API key\nconst youtubeUrl = `${BASE_URL}?part=snippet,contentDetails,status,statistics,player,topicDetails&id=${VIDEO_ID}&key=${GOOGLE_API_KEY}`;\n\n\/\/ Return the constructed URL\nreturn [\n  {\n    json: {\n      youtubeUrl: youtubeUrl,\n    },\n  },\n];\n"
+            },
+            "id": "fce4238f-5c4f-4679-9f33-fc2b01c8ea98",
+            "name": "Create YouTube API URL",
+            "type": "n8n-nodes-base.code",
+            "position": [
+                980,
+                180
+            ],
+            "typeVersion": 2
+        },
+        {
+            "parameters": {
+                "url": "={{ $json.youtubeUrl }}",
+                "options": []
+            },
+            "id": "3d897793-172c-490b-97b8-5937f04b138b",
+            "name": "Get YouTube Video Details",
+            "type": "n8n-nodes-base.httpRequest",
+            "position": [
+                1180,
+                180
+            ],
+            "typeVersion": 4.20000000000000017763568394002504646778106689453125
+        },
+        {
+            "parameters": {
+                "mode": "combine",
+                "combineBy": "combineByPosition",
+                "options": []
+            },
+            "id": "7b740733-f5db-4985-8390-07363826112d",
+            "name": "Merge YouTube Details & Transcript",
+            "type": "n8n-nodes-base.merge",
+            "position": [
+                1680,
+                200
+            ],
+            "typeVersion": 3
+        },
+        {
+            "parameters": {
+                "aggregate": "aggregateAllItemData",
+                "options": []
+            },
+            "id": "4004a393-5e4d-4723-adc4-3940b5afd2a3",
+            "name": "Create One JSON Object",
+            "type": "n8n-nodes-base.aggregate",
+            "position": [
+                1680,
+                560
+            ],
+            "typeVersion": 1
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "e656b8ef-4266-4f50-bd41-703b4bdb04df",
+                            "name": "GOOGLE_API_KEY",
+                            "type": "string",
+                            "value": "YOUR_API_KEY"
+                        },
+                        {
+                            "id": "32db428d-a2e2-48a0-92c6-3880e744d140",
+                            "name": "VIDEO_ID",
+                            "type": "string",
+                            "value": "={{ $json.videoId }}"
+                        }
+                    ]
+                },
+                "options": []
+            },
+            "id": "4e4bafb5-b9ee-4d7b-bc27-1341173c2fed",
+            "name": "Workflow Variables",
+            "type": "n8n-nodes-base.set",
+            "position": [
+                680,
+                340
+            ],
+            "typeVersion": 3.399999999999999911182158029987476766109466552734375
+        },
+        {
+            "parameters": {
+                "content": "## YouTube Video Details",
+                "height": 260,
+                "width": 500,
+                "color": 3
+            },
+            "id": "a664fd2a-9004-4e08-a8ec-06b76950db12",
+            "name": "Sticky Note14",
+            "type": "n8n-nodes-base.stickyNote",
+            "position": [
+                880,
+                100
+            ],
+            "typeVersion": 1
+        },
+        {
+            "parameters": {
+                "content": "## YouTube Video Comments",
+                "height": 300,
+                "width": 700,
+                "color": 5
+            },
+            "id": "6066165e-b989-4af8-a443-ebc9eb659f0a",
+            "name": "Sticky Note15",
+            "type": "n8n-nodes-base.stickyNote",
+            "position": [
+                880,
+                420
+            ],
+            "typeVersion": 1
+        },
+        {
+            "parameters": {
+                "fieldsToSummarize": {
+                    "values": [
+                        {
+                            "aggregation": "concatenate",
+                            "field": "comments"
+                        }
+                    ]
+                },
+                "options": []
+            },
+            "id": "0046460d-f30b-4fd6-9c23-d692b2fe27dd",
+            "name": "Combine Comments",
+            "type": "n8n-nodes-base.summarize",
+            "position": [
+                1380,
+                520
+            ],
+            "typeVersion": 1
+        },
+        {
+            "parameters": {
+                "fieldToSplitOut": "comments",
+                "options": []
+            },
+            "id": "713ca698-0d1e-4605-b031-9e05e0d99cda",
+            "name": "Split Out Comments",
+            "type": "n8n-nodes-base.splitOut",
+            "position": [
+                1180,
+                520
+            ],
+            "typeVersion": 1
+        },
+        {
+            "parameters": {
+                "sendTo": "YOUR_EMAIL_ID",
+                "subject": "YouTube Video Report",
+                "message": "={{ $json.html }}",
+                "options": {
+                    "appendAttribution": false
+                }
+            },
+            "id": "2aba1155-9589-4865-8b28-bd33d75c8f42",
+            "name": "Gmail Report",
+            "type": "n8n-nodes-base.gmail",
+            "position": [
+                800,
+                940
+            ],
+            "webhookId": "a8cf8d27-0b7b-44ed-ad12-174f8bde0c02",
+            "typeVersion": 2.100000000000000088817841970012523233890533447265625,
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yTThhd5JaScIc9Gh",
+                    "name": "Gmail account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "content": "## 📽️ YouTube Video Comment Reporting Agent",
+                "height": 500,
+                "width": 1080,
+                "color": 6
+            },
+            "id": "34fa283c-6b7d-477d-bc61-f17004a10a4b",
+            "name": "Sticky Note",
+            "type": "n8n-nodes-base.stickyNote",
+            "position": [
+                0,
+                800
+            ],
+            "typeVersion": 1
+        },
+        {
+            "parameters": {
+                "model": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "gpt-4o-mini"
+                },
+                "options": []
+            },
+            "id": "1f801fbe-d8ac-4641-90a9-dc67fa9d0dc4",
+            "name": "gpt-4o-mini",
+            "type": "@n8n\/n8n-nodes-langchain.lmChatOpenAi",
+            "position": [
+                180,
+                1120
+            ],
+            "typeVersion": 1.1999999999999999555910790149937383830547332763671875,
+            "credentials": {
+                "openAiApi": {
+                    "id": "jt2gEsC9mI3P5Ary",
+                    "name": "OpenAi account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "mode": "markdownToHtml",
+                "markdown": "={{ $json.output }}",
+                "destinationKey": "html",
+                "options": []
+            },
+            "id": "cb82c022-39c4-4bcc-ba2b-2710b193599c",
+            "name": "Markdown to HTML",
+            "type": "n8n-nodes-base.markdown",
+            "position": [
+                560,
+                940
+            ],
+            "typeVersion": 1
+        },
+        {
+            "parameters": {
+                "agent": "conversationalAgent",
+                "promptType": "define",
+                "text": "=This is the YouTube video detals and comments: {{ $json.data.toJsonString() }}",
+                "options": {
+                    "systemMessage": "**Objective:**  \nAnalyze the provided YouTube video data and comments to generate a **comprehensive and detailed report**. The report should help YouTube creators identify trends, viewer interests, and actionable insights for creating similar or related content that resonates with audiences. The report must provide **in-depth explanations, examples, and recommendations** to guide creators in producing engaging content.\n\n**Instructions for AI:**  \nYou are an advanced AI agent tasked with analyzing YouTube video details and comments. Your goal is to produce a **detailed and insightful report** based on the following structure. Use the provided data to extract meaningful insights, trends, and actionable recommendations. Ensure each section is thorough, well-explained, and includes examples where applicable.\n\n---\n\n### Report Structure\n\n#### 1. Video Overview\n   - Provide a summary of the video's title, description, and key topics.\n   - Highlight the video’s performance metrics (e.g., views, likes, comments) and explain what these metrics suggest about its success.\n   - Identify the primary themes or subjects discussed in the video. Explain why these themes might have resonated with viewers (e.g., relevance to current trends, novelty of the topic).\n\n#### 2. Comment Analysis\n   - **Sentiment Analysis:**  \n     Perform sentiment analysis on the comments to determine the overall tone (e.g., positive, negative, neutral). Provide percentages or counts for each sentiment category. Include examples of representative comments for each sentiment type.\n   - **Common Themes:**  \n     Identify recurring topics or questions in the comments (e.g., viewers asking for tutorials, expressing excitement, or suggesting improvements). Explain why these themes are significant and how they reflect viewer interests or needs.\n   - **Engagement Drivers:**  \n     Highlight specific aspects of the video that generated high engagement (e.g., unique features, clear explanations). Provide detailed examples of what viewers appreciated most.\n   - **Viewer Pain Points:**  \n     Extract comments that express confusion, issues, or requests for clarification. For example:\n       - Questions about technical aspects or processes covered in the video.\n       - Requests for additional details or resources.\n       - Critiques or suggestions for improvement.\n\n#### 3. Content Opportunities\n   - Based on comment analysis, suggest topics for future videos:\n     - Tutorials addressing unresolved questions (e.g., step-by-step guides on complex tasks).\n     - Deep dives into related tools or concepts mentioned in comments.\n     - Solutions for specific use cases requested by viewers.\n   - Highlight any niche interests or emerging trends observed in viewer feedback. Explain why these opportunities are valuable and how they align with audience preferences.\n   - Provide examples of potential video titles or formats (e.g., \"Top 5 Tools for Web Scraping Beginners\" or \"How to Scrape Dynamic Pages Without Coding\").\n\n#### 4. Audience Profile\n   - Infer characteristics of the audience based on their comments:\n     - Level of expertise (e.g., beginners asking basic questions vs. advanced users discussing technical details).\n     - Interests (e.g., AI tools, web scraping techniques).\n     - Geographic or cultural indicators if applicable (e.g., language used in comments).\n   - Explain how understanding this audience profile can help creators tailor their content.\n\n#### 5. Actionable Recommendations\n   - Provide a list of actionable steps for content creators with detailed explanations:\n     1. Create follow-up videos addressing common questions raised in comments. Explain how addressing these questions can build trust and engagement with viewers.\n     2. Develop content around highly praised aspects of the video. For example, if viewers appreciated a particular tool demonstration, suggest creating a series exploring similar tools.\n     3. Explore collaborations with other creators in similar niches to expand reach and tap into overlapping audiences.\n     4. Promote ethical practices (if relevant) to build credibility and trust with viewers.\n   - Include specific strategies for improving engagement (e.g., encouraging viewers to comment their questions or ideas for future videos).\n\n#### 6. Keywords and Tags\n   - Extract frequently mentioned terms from comments to suggest keywords\/tags for optimization.\n   - Provide a list of suggested tags based on both video content and comment analysis.\n   - Explain how these tags can improve discoverability on YouTube.\n\n#### 7. Potential Collaborations\n   - Identify opportunities for partnerships based on viewer suggestions or related channels\/topics mentioned in comments.\n   - Suggest creators or channels that align with the video's themes and audience interests.\n\n#### 8. Detailed Suggestions for Similar Content\n   - Analyze what made this video engaging (e.g., storytelling techniques, visuals, pacing) and explain how these elements can be replicated in future videos.\n   - Suggest new angles or formats that build on this video's success (e.g., live Q&A sessions, behind-the-scenes content).\n   - Recommend experimenting with different styles or approaches based on viewer feedback (e.g., shorter videos for quick tips vs. longer deep-dive tutorials).\n\n---\n\n**Data Input Format:**  \nProvide the AI with structured data containing:\n- Video details: title, description, tags, views, likes, comments.\n- Comment data: text of each comment, timestamp, likes\/replies on each comment.\n\n**Output Requirements:**  \nThe AI should generate a well-organized report in natural language formatted with Markdown with clear headings and bullet points where appropriate. Ensure all insights are actionable and relevant to YouTube creators aiming to replicate the video's success. Each suggestion should include detailed explanations and examples to guide creators effectively.\n"
+                }
+            },
+            "id": "3fdd1f8a-2d9c-43d8-9bd1-5f3d9c8b2ef3",
+            "name": "YouTube Video Report Agent",
+            "type": "@n8n\/n8n-nodes-langchain.agent",
+            "position": [
+                200,
+                940
+            ],
+            "typeVersion": 1.6999999999999999555910790149937383830547332763671875
+        },
+        {
+            "parameters": {
+                "jsCode": "\/\/ Define a helper function to build a query string from an object\nfunction buildQueryString(params) {\n\treturn Object.keys(params)\n\t\t.map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)\n\t\t.join('&');\n}\n\n\/\/ Define the base URL for the YouTube Data API\nconst BASE_URL = \"https:\/\/www.googleapis.com\/youtube\/v3\/commentThreads\";\n\n\/\/ Get the first input item\nconst item = $input.first();\n\n\/\/ Extract the videoId and google_api_key from the input JSON\nconst videoId = item.json.VIDEO_ID;\nconst apiKey = item.json.GOOGLE_API_KEY; \/\/ Dynamically retrieve API key\n\nconst comments = [];\nlet nextPageToken = undefined;\n\nwhile (true) {\n    \/\/ Construct URL parameters using an object literal\n    const params = {\n        part: \"snippet\",\n        videoId: videoId,\n        key: apiKey\n    };\n\n    if (nextPageToken) {\n        params.pageToken = nextPageToken;\n    }\n\n    \/\/ Build the full URL without using URLSearchParams\n    const queryString = buildQueryString(params);\n    const url = `${BASE_URL}?${queryString}`;\n    \n    \/\/ Set up the options for the HTTP request helper\n    const options = {\n        method: \"GET\",\n        uri: url,\n        json: true\n    };\n\n    \/\/ Use n8n's built-in HTTP request helper instead of fetch\n    const data = await this.helpers.request(options);\n\n    \/\/ console.log(data.items)\n\n    \/\/ Process each comment in the response\n    data.items.forEach(item => {\n        comments.push(item.snippet.topLevelComment.snippet.textOriginal);\n    });\n\n    \/\/ console.log(data.nextPageToken)\n\n    \/\/ Exit loop if no further pages exist\n    if (!data.nextPageToken) {\n        break;\n    }\n    nextPageToken = data.nextPageToken;\n}\n\n\/\/ Return the collected comments as an item output for n8n\nreturn [{ json: { comments } }];\n"
+            },
+            "id": "75a0acb8-b754-4bfb-9b09-629f9f59f128",
+            "name": "Get Video Comments with Pagination",
+            "type": "n8n-nodes-base.code",
+            "position": [
+                980,
+                520
+            ],
+            "typeVersion": 2
+        },
+        {
+            "parameters": {
+                "options": []
+            },
+            "type": "@n8n\/n8n-nodes-langchain.chatTrigger",
+            "typeVersion": 1.100000000000000088817841970012523233890533447265625,
+            "position": [
+                80,
+                340
+            ],
+            "id": "630a9b5a-8d50-4cf0-8155-269a3edfaf5b",
+            "name": "When chat message received",
+            "webhookId": "ac8d4d88-2628-4ab1-a728-efd2f18c14fa"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "b22e5ef2-30ae-4e45-ad04-8e06a7b4001f",
+                            "name": "video_url",
+                            "value": "={{ $json.chatInput }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": []
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.399999999999999911182158029987476766109466552734375,
+            "position": [
+                280,
+                340
+            ],
+            "id": "e1c239c0-5302-4fa3-8499-bc8895f05bbe",
+            "name": "Get Video URL"
+        },
+        {
+            "parameters": {
+                "jsCode": "const urlString = $json[\"video_url\"];\nlet videoId = null;\n\ntry {\n  const u = new URL(urlString);\n  if (u.hostname.includes(\"youtu.be\")) {\n    \/\/ short URL: pathname is \"\/<VIDEOID>\"\n    videoId = u.pathname.slice(1);\n  } else {\n    \/\/ regular URL: look for ?v=\n    videoId = u.searchParams.get(\"v\");\n  }\n} catch (e) {\n  \/\/ fallback regex if URL parsing fails\n  const m = urlString.match(\/(?:youtu.be\/|v=)([^&\/?#]+)\/);\n  videoId = m ? m[1] : null;\n}\n\nreturn [\n  {\n    json: { videoId },\n  },\n];\n"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                480,
+                340
+            ],
+            "id": "9f1e837d-9c6e-4dbc-b97b-0dc5bad7a91f",
+            "name": "Get Video ID"
+        }
+    ],
+    "pinData": [],
+    "connections": {
+        "gpt-4o-mini": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "YouTube Video Report Agent",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Combine Comments": {
+            "main": [
+                [
+                    {
+                        "node": "Merge YouTube Details & Transcript",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "Markdown to HTML": {
+            "main": [
+                [
+                    {
+                        "node": "Gmail Report",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Split Out Comments": {
+            "main": [
+                [
+                    {
+                        "node": "Combine Comments",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Workflow Variables": {
+            "main": [
+                [
+                    {
+                        "node": "Create YouTube API URL",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Get Video Comments with Pagination",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create One JSON Object": {
+            "main": [
+                [
+                    {
+                        "node": "YouTube Video Report Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create YouTube API URL": {
+            "main": [
+                [
+                    {
+                        "node": "Get YouTube Video Details",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get YouTube Video Details": {
+            "main": [
+                [
+                    {
+                        "node": "Merge YouTube Details & Transcript",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "YouTube Video Report Agent": {
+            "main": [
+                [
+                    {
+                        "node": "Markdown to HTML",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Video Comments with Pagination": {
+            "main": [
+                [
+                    {
+                        "node": "Split Out Comments",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Merge YouTube Details & Transcript": {
+            "main": [
+                [
+                    {
+                        "node": "Create One JSON Object",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "When chat message received": {
+            "main": [
+                [
+                    {
+                        "node": "Get Video URL",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Video URL": {
+            "main": [
+                [
+                    {
+                        "node": "Get Video ID",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Video ID": {
+            "main": [
+                [
+                    {
+                        "node": "Workflow Variables",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "versionId": "d8387771-2ba0-415c-b6a8-401476101b62",
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "0b008bd86df5902c8c20987844e8ef7a6cf9a5639f4abd7f8a22764455c02c65"
+    },
+    "id": "1M6og97JMj4azvmy",
+    "tags": []
+}
